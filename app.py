@@ -5,6 +5,8 @@ from langchain import PromptTemplate
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
 from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI
+from langchain.llms import AzureOpenAI
 from langchain.prompts import MessagesPlaceholder
 from langchain.memory import ConversationSummaryBufferMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -15,12 +17,20 @@ from typing import Type
 from bs4 import BeautifulSoup
 import requests
 import json
+import streamlit as st
 from langchain.schema import SystemMessage
 from fastapi import FastAPI
 
+
+
+
 load_dotenv()
-brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
+browserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
+# os.environ["OPENAI_API_TYPE"] = "azure"
+# os.environ["OPENAI_API_VERSION"] = "2023-05-15"
+# os.environ["OPENAI_API_BASE"] = os.getenv("AZURE_OPENAI_API_BASE")
+# os.environ["OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_API_KEY")
 
 # 1. Tool for search
 
@@ -37,8 +47,10 @@ def search(query):
         'Content-Type': 'application/json'
     }
 
+    
     response = requests.request("POST", url, headers=headers, data=payload)
 
+    
     print(response.text)
 
     return response.text
@@ -65,7 +77,7 @@ def scrape_website(objective: str, url: str):
     data_json = json.dumps(data)
 
     # Send the POST request
-    post_url = f"https://chrome.browserless.io/content?token={brwoserless_api_key}"
+    post_url = f"https://chrome.browserless.io/content?token={browserless_api_key}"
     response = requests.post(post_url, headers=headers, data=data_json)
 
     # Check the response status code
@@ -82,6 +94,13 @@ def scrape_website(objective: str, url: str):
     else:
         print(f"HTTP request failed with status code {response.status_code}")
 
+
+#scrape_website("what is langchain?", "Https://python.langchain.com/en/latest/index.html")
+
+
+# THIS SECTION HANDLES THE TOKEN LIMIT THAT LLMS HAVE - MOST WILL TAKE AROUND 4000 TOKENS
+### ONE METHOD - MAP REDUCE - (CHUNKS THE CONTENT INTO BLOCKS, EACH BLOCK SENT TO LLM TO GET A SUMMARY, THEN A SUMMARY OF ALL SUMMARIES IS PRODUCED - GOOD FOR 'SIMPLE' / SMALL NOS OF DOCS)
+### ANOTHER METHOD - VECTOR SEARCH - CREATES A VECTOR EMBEDDING OF LARGE CONTENT, THEN DO A VECTOR SEARCH FOR THE MOST RELEVANT PIECES OF CONTENT - GOOD FOR VERY LARGE VOLUMES
 
 def summary(objective, content):
     llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
@@ -157,7 +176,8 @@ agent_kwargs = {
     "system_message": system_message,
 }
 
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+#llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
+llm = AzureChatOpenAI(openai_api_base = os.getenv("AZURE_OPENAI_API_BASE"), openai_api_version="2023-07-01-preview", deployment_name="gpt35turboversion0613", openai_api_key = os.getenv("AZURE_OPENAI_API_KEY"), openai_api_type="azure", temperature =0)
 memory = ConversationSummaryBufferMemory(
     memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
 
@@ -173,17 +193,20 @@ agent = initialize_agent(
 
 # 4. Use streamlit to create a web app
 # def main():
-#     st.set_page_config(page_title="AI research agent", page_icon=":bird:")
+#     st.set_page_config(page_title="AI research agent", page_icon=":robot_face:")
 
-#     st.header("AI research agent :bird:")
-#     query = st.text_input("Research goal")
+#     st.header("AI research slave :robot_face:")
+#     query = st.text_input("Exploration objective")
 
 #     if query:
-#         st.write("Doing research for ", query)
+#         st.write("Researching.... ", "**"+query+"**")
 
 #         result = agent({"input": query})
 
 #         st.info(result['output'])
+
+#         st.success("Completed", icon="🎉")
+    
 
 
 # if __name__ == '__main__':
