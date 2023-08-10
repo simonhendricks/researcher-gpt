@@ -84,7 +84,7 @@ def scrape_website(objective: str, url: str):
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, "html.parser")
         text = soup.get_text()
-        print("CONTENTTTTTT:", text)
+        print("Extracted content: ", text)
 
         if len(text) > 10000:
             output = summary(objective, text)
