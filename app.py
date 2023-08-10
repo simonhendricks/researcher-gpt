@@ -95,7 +95,7 @@ def scrape_website(objective: str, url: str):
         print(f"HTTP request failed with status code {response.status_code}")
 
 
-#scrape_website("what is langchain?", "Https://python.langchain.com/en/latest/index.html")
+#scrape_website("what is pharmacogenomics?", "https://www.nature.com/scitable/topicpage/pharmacogenomics-and-personalized-medicine-643/")
 
 
 # THIS SECTION HANDLES THE TOKEN LIMIT THAT LLMS HAVE - MOST WILL TAKE AROUND 4000 TOKENS
