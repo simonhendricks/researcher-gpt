@@ -17,7 +17,7 @@ from typing import Type
 from bs4 import BeautifulSoup
 import requests
 import json
-#import streamlit as st
+import streamlit as st
 from langchain.schema import SystemMessage
 from fastapi import FastAPI
 
@@ -25,8 +25,14 @@ from fastapi import FastAPI
 
 
 load_dotenv()
+
+# Get environment variables
 browserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
+azure_openai_api_base = os.getenv("AZURE_OPENAI_API_BASE")
+azure_openai_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+
+
 # os.environ["OPENAI_API_TYPE"] = "azure"
 # os.environ["OPENAI_API_VERSION"] = "2023-05-15"
 # os.environ["OPENAI_API_BASE"] = os.getenv("AZURE_OPENAI_API_BASE")
@@ -168,7 +174,8 @@ system_message = SystemMessage(
             3/ After scraping & search, you should think "is there any new things i should search & scraping based on the data I collected to increase research quality?" If answer is yes, continue; But don't do this more than 3 iteratins
             4/ You should not make things up, you should only write facts & data that you have gathered
             5/ In the final output, You should include all reference data & links to back up your research; You should include all reference data & links to back up your research
-            6/ In the final output, You should include all reference data & links to back up your research; You should include all reference data & links to back up your research"""
+            6/ In the final output, You should include all reference data & links to back up your research; You should include all reference data & links to back up your research
+            7/ In the final output, You should include all reference data & links to back up your research; You should include all reference data & links to back up your research"""
 )
 
 agent_kwargs = {
@@ -177,7 +184,15 @@ agent_kwargs = {
 }
 
 #llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
-llm = AzureChatOpenAI(openai_api_base = os.getenv("AZURE_OPENAI_API_BASE"), openai_api_version="2023-07-01-preview", deployment_name="gpt35turboversion0613", openai_api_key = os.getenv("AZURE_OPENAI_API_KEY"), openai_api_type="azure", temperature =0)
+llm = AzureChatOpenAI(
+            openai_api_base=azure_openai_api_base,
+            openai_api_version="2023-07-01-preview",
+            deployment_name="gpt35turboversion0613",
+            openai_api_key=azure_openai_api_key,
+            openai_api_type="azure",
+            temperature=0
+        )
+
 memory = ConversationSummaryBufferMemory(
     memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
 
@@ -192,38 +207,38 @@ agent = initialize_agent(
 
 
 # 4. Use streamlit to create a web app
-# def main():
-#     st.set_page_config(page_title="AI research agent", page_icon=":robot_face:")
+def main():
+    st.set_page_config(page_title="AI research agent", page_icon=":robot_face:")
 
-#     st.header("AI research slave :robot_face:")
-#     query = st.text_input("Exploration objective")
+    st.header("AI research slave :robot_face:")
+    query = st.text_input("Exploration objective")
 
-#     if query:
-#         st.write("Researching.... ", "**"+query+"**")
+    if query:
+        st.write("Researching.... ", "**"+query+"**")
 
-#         result = agent({"input": query})
+        result = agent({"input": query})
 
-#         st.info(result['output'])
+        st.info(result['output'])
 
-#         st.success("Completed", icon="🎉")
+        st.success("Completed", icon="🎉")
     
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
 
 
 # 5. Set this as an API endpoint via FastAPI
-app = FastAPI()
+# app = FastAPI()
 
 
-class Query(BaseModel):
-    query: str
+# class Query(BaseModel):
+#     query: str
 
 
-@app.post("/")
-def researchAgent(query: Query):
-    query = query.query
-    content = agent({"input": query})
-    actual_content = content['output']
-    return actual_content
+# @app.post("/")
+# def researchAgent(query: Query):
+#     query = query.query
+#     content = agent({"input": query})
+#     actual_content = content['output']
+#     return actual_content
